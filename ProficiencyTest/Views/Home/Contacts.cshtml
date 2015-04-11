@@ -1,0 +1,18 @@
+﻿@model ProficiencyTest.Models.ContactsPage
+@{
+    Layout = null;
+}
+@if (this.Model != null && this.Model.Contacts != null)
+{
+    for (int i = 0; i < this.Model.Contacts.Count; i++)
+    {
+        <tr data-id="@this.Model.Contacts[i].Id" data-type="@this.Model.Contacts[i].ContactType">
+            <td>@Html.DisplayFor(m => m.Contacts[i].Name.First)</td>
+            <td>@Html.DisplayFor(m => m.Contacts[i].Name.Last)</td>
+            <td>@Html.DisplayFor(m => m.Contacts[i].ContactType)</td>
+        </tr>
+    }
+}
+<script type="text/javascript">
+    $(document).data('contactsPageState', { pageNumber: @this.Model.PageNumber, pageCount: @this.Model.PageCount });
+</script>

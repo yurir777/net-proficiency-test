@@ -1,0 +1,209 @@
+﻿@{
+    ViewBag.Title = "Contact Manager";
+}
+
+<table class="table table-bordered table-condensed table-hover table-striped">
+    <thead>
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody id="contactsBody">
+    </tbody>
+</table>
+<nav>
+    <ul class="pagination">
+        <li id="prev" class="disabled" onclick="return loadContactsPage('prev');">
+            <a href="#" title="Previous Page">
+                <span>&laquo;</span>
+            </a>
+        </li>
+        <li id="curr" class="disabled">
+            <a href="#" title="Refresh Current Page" onclick="return loadContactsPage();">
+                <span>Page ?</span>
+            </a>
+        </li>
+        <li id="next" class="disabled">
+            <a href="#" title="Next Page" onclick="return loadContactsPage('next');">
+                <span>&raquo;</span>
+            </a>
+        </li>
+    </ul>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <a class="btn btn-default" href="#" role="button" onclick="return loadCustomer(0);"><span class="text-info">Add Customer</span></a>
+    <a class="btn btn-default" href="#" role="button" onclick="return loadSupplier(0);"><span class="text-info">Add Supplier</span></a>
+</nav>
+<br />
+<br />
+<div id="contactDetails">
+</div>
+
+@section scripts
+{
+    <script type="text/javascript">
+    $(function () {
+        $.ajaxSetup({ cache: false });
+        loadContactsPage();
+        window.setInterval(function () {
+            if (window.contactsPageUrl && window.contactsPageUrl !== window.location.href && loadContactsPage) {
+                loadContactsPage();
+            }
+        }, 500);
+    });
+
+    function loadContactsPage(action) {
+        var pageNo = getCurrentPageNo();
+        var baseUrl = '@Url.Action("Contacts", "Home")';
+            var url = baseUrl + '/' + pageNo + (action ? '?topage=' + action : '');
+            $('#contactsBody').load(url, function () {
+                onContactsPageLoaded();
+            });
+            return false;
+        }
+
+        function getCurrentPageNo(asInt) {
+            var pageNo = window.location.pathname.replace(/\/+$/, '').split('/').pop();
+            return asInt ? Number(pageNo) : pageNo;
+        }
+
+        function onContactsPageLoaded() {
+            // Update URL
+            var pageState = $(document).data('contactsPageState');
+            var currentPageNo = getCurrentPageNo(true);
+            if (pageState.pageNumber !== currentPageNo) {
+                var url = window.location.pathname.replace(/\/+$/, '');
+                if (currentPageNo === 0) {
+                    var newUrl = url + '/' + pageState.pageNumber;
+                    if (newUrl !== url) {
+                        window.history.replaceState({}, document.title, newUrl);
+                    }
+                }
+                else {
+                    var newUrl = url.substr(0, url.lastIndexOf('/') + 1) + pageState.pageNumber;
+                    if (newUrl !== url) {
+                        window.history.pushState({}, document.title, newUrl);
+                    }
+                }
+            }
+            window.contactsPageUrl = window.location.href;
+
+            // Update pager
+            var prev = $('#prev');
+            if (pageState.pageNumber === 1) {
+                prev.addClass('disabled');
+            }
+            else {
+                prev.removeClass('disabled');
+            }
+            var curr = $('#curr');
+            curr.removeClass('disabled');
+            curr.find('span').text("Page " + pageState.pageNumber + " of " + pageState.pageCount);
+            var next = $('#next');
+            if (pageState.pageNumber < pageState.pageCount) {
+                next.removeClass('disabled')
+            }
+            else {
+                next.addClass('disabled');
+            }
+
+            // Bind click event to cells
+            $('#contactsBody td').on('click', onContactClick);
+        }
+
+        function onContactClick(e) {
+            var id = $(this).closest('tr').data('id');
+            if (id && $('#contactDetails #Id').val() === id) {
+                return;
+            }
+
+            var type = $(this).closest('tr').data('type');
+            if (type === 'Customer') {
+                loadCustomer(id);
+            }
+            else if (type === 'Supplier') {
+                loadSupplier(id);
+            }
+        }
+
+        function loadCustomer(id) {
+            var baseUrl = '@Url.Action("Customer", "Home")';
+            if (typeof(id) === 'number') {
+                // Use GET
+                $('#contactDetails').load(baseUrl + '/' + id, onCustomerLoaded);
+            }
+            else {
+                // Use POST
+                handleDetailsButtonClick.call(this, baseUrl, onCustomerLoaded)
+                id.preventDefault();
+            }
+            return false;
+        }
+
+        function onCustomerLoaded() {
+            $('#btnSubmit, #btnDelete').on('click', loadCustomer);
+            onDetailsLoaded();
+        }
+
+        function loadSupplier(id) {
+            var baseUrl = '@Url.Action("Supplier", "Home")';
+            if (typeof (id) === 'number') {
+                // Use GET
+                $('#contactDetails').load(baseUrl + '/' + id, onSupplierLoaded);
+            }
+            else {
+                // Use POST
+                handleDetailsButtonClick.call(this, baseUrl, onSupplierLoaded)
+                id.preventDefault();
+            }
+            return false;
+        }
+
+        function onSupplierLoaded() {
+            $('#btnSubmit, #btnDelete').on('click', loadSupplier);
+            onDetailsLoaded();
+        }
+
+        function onDetailsLoaded() {
+            loadContactsPage();     // Refresh page
+            var isDeleted = $('#detailsState').text().indexOf('Deleted') > 0;
+            if (isDeleted) {
+                $('#btnSubmit, #btnDelete').addClass('disabled');
+                $('#contactDetailsInner').fadeOut(3000);
+            }
+            else {
+                $('#detailsState').fadeOut(5000);
+            }
+        }
+
+        function handleDetailsButtonClick(url, onLoaded) {
+            var isDelete = $(this).text() === "Delete";
+            var isConfirmation = !$('#confirmation').hasClass('hidden');
+
+            if (isDelete && !isConfirmation) {
+                // Delete button pressed but confirmation was not displayed yet - user will have to press Delete button again
+                $('#confirmation').removeClass('hidden');
+                $('#btnSubmit span').text('Cancel');
+                return;
+            }
+            else if (isDelete && isConfirmation) {
+                // Delete button pressed and confirmation was displayed - adjust url and proceed with Delete action
+                url += '?delete=true';
+            }
+            else if (!isDelete && isConfirmation) {
+                // Cancel button pressed while displaying confirmation - return to Edit mode
+                $('#confirmation').addClass('hidden');
+                $('#btnSubmit span').text('Save');
+                return;
+            }
+
+            // Either Save button pressed or Delete button pressed after displaying confirmation - POST to the controller
+            var data = {};
+            $("#contactDetails form").serializeArray().map(function (x) { data[x.name] = x.value; });
+            $('#contactDetails').load(url, data, onCustomerLoaded);
+        }
+    </script>
+}
+
+

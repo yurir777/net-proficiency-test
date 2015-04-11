@@ -1,0 +1,61 @@
+﻿@model ProficiencyTest.Models.Supplier
+
+@{
+    Layout = null;
+}
+
+<div id="contactDetailsInner">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>@(this.Model.Id == 0 ? "Add " : "")Supplier</h4>
+            </div>
+            <div class="panel-body form-horizontal">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                @Html.HiddenFor(model => model.Id)
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Name.First, htmlAttributes: new { @class = "control-label col-md-2" })
+                    <div class="col-md-10">
+                        @Html.EditorFor(model => model.Name.First, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Name.First, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Name.Last, htmlAttributes: new { @class = "control-label col-md-2" })
+                    <div class="col-md-10">
+                        @Html.EditorFor(model => model.Name.Last, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Name.Last, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Telephone, htmlAttributes: new { @class = "control-label col-md-2" })
+                    <div class="col-md-10">
+                        @Html.EditorFor(model => model.Telephone, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Telephone, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div id="confirmation" class="row hidden">
+                    <div class="col-md-offset-2 col-md-8 alert alert-danger">
+                        Are you sure you want to delete this Customer?
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-8">
+                        <a id="btnSubmit" class="btn btn-default" href="#" role="button" onclick="return false;"><span class="text-info">Save</span></a>
+                        &nbsp;&nbsp;
+                        <strong id="detailsState" class="text-success">@ViewBag.DetailsState</strong>
+                        <a id="btnDelete" class="btn btn-default pull-right" href="#" role="button" onclick="return false;"><span class="text-danger">Delete</span></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
